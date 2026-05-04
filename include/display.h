@@ -12,7 +12,7 @@ typedef struct display{
 } display;
 
 display* init_display(){
-    return malloc(sizeof(display));
+    return (display*)malloc(sizeof(display));
 }
 
 void paint(display* d, int x, int y, int on){
@@ -28,7 +28,15 @@ void paint(display* d, int x, int y, int on){
         int intermediate = (1 << y) ^ 0xFFFFFFF;
         d->pixels[x] &= intermediate;
     }
+}
 
+char query_display(display* d, int x, int y){
+    if (x > 64 || x < 0 || y > 32 || y < 0){
+        printf("ERROR: invalid coordinate supplied for paint");
+        return 0;
+    }
+
+    return (d->pixels[x] & (1 << y)) != 0;
 }
 
 void render_raylib(display* d){

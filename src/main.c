@@ -4,19 +4,26 @@
 #include "../include/raylib.h"
 
 #include "../include/stack.h"
+#include "../include/chip.h"
 
 int main(void)
 {
-    display* disp = init_display();
+    chip_state* chip = init_chip_empty();
+    chip->pc = 0x200;
+
+    load_from_path("roms/3-corax+.ch8", chip->memory);
 
     InitWindow(screenWidth, screenHeight, "chip8emu");
 
-    SetTargetFPS(60);               // Set our game to run at 60 frames-per-second
+    SetTargetFPS(30);               // Set our game to run at 60 frames-per-second
 
     while (!WindowShouldClose())    // Detect window close button or ESC key
     {
         BeginDrawing();
-            render_raylib(disp);
+            for(int i = 0; i < 16; i++){
+                cycle(chip);
+            }
+            render_raylib(chip->disp);
             ClearBackground(RAYWHITE);
         EndDrawing();
     }
