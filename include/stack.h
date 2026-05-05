@@ -20,15 +20,15 @@ struct stack* init_stack(){
 }
 
 void print_stack(stack* s){
-    printf("Stack capacity: %d\n", s->len);
-    printf("Stack index: %d\n", s->index);
+    debugf("Stack capacity: %d\n", s->len);
+    debugf("Stack index: %d\n", s->index);
     for (int i = 0; i < s->index; i++){
-        printf("[%d] ", s->arr[i]);
+        debugf("[%d] ", s->arr[i]);
     }
     if (s->index == 0){
-        printf("[EMPTY STACK]");
+        debugf("[EMPTY STACK]");
     }
-    printf("\n");
+    debugf("\n");
 }
 
 void push(stack* s, short data){

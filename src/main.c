@@ -11,25 +11,34 @@ int main(void)
 {
     chip_state* chip = init_chip_empty();
     chip->pc = 0x200;
+    load_font(chip->memory);
 
-    load_from_path("roms/3-corax+.ch8", chip->memory);
+    // load_from_path("roms/Particle Demo [zeroZshadow, 2008].ch8", chip->memory);
+    // load_from_path("roms/3dviprmaze-schip.ch8", chip->memory);
+    load_from_path("roms/slipperyslope.ch8", chip->memory);
+    // load_from_path("roms/6-keypad.ch8", chip->memory);
 
     InitWindow(screenWidth, screenHeight, "chip8emu");
 
-    SetTargetFPS(30);               // Set our game to run at 60 frames-per-second
+    SetTargetFPS(120);               // Set our game to run at 60 frames-per-second
 
     while (!WindowShouldClose())    // Detect window close button or ESC key
     {
         BeginDrawing();
+        ClearBackground(RAYWHITE);
 
-        get_keypad(chip->keypad);
-
-        for(int i = 0; i < 16; i++){
-            cycle(chip);
+        if (chip->delayTimer > 0){
+            chip->delayTimer -= 1;
+        }
+        if (chip->soundTimer > 0){
+            chip->soundTimer -= 1;
         }
 
-        render_raylib(chip->disp);
-        ClearBackground(RAYWHITE);
+        get_keypad(chip->keypad);
+        for(int i = 0; i < 80; i++){
+            cycle(chip);
+            render_raylib(chip->disp);
+        }
 
         EndDrawing();
     }

@@ -4,6 +4,7 @@
 #include "raylib.h"
 #include "stack.h"
 #include "mem.h"
+#include "input.h"
 #include <stdalign.h>
 
 typedef struct chip_state {
@@ -104,10 +105,13 @@ void skip_not_press_inst(chip_state* chip, short reg){
     }
 }
 void get_key_inst(chip_state* chip, short reg){
-    debugf("Waiting on keypress %x\n" , chip->registers[reg]);
-    if (chip->keypad[chip->registers[reg]] == 0){
-        chip->pc -= 2; // keep it at the same spot
+    int key = get_released_key();
+    if (key >= 0){
+        debugf("Key captured: %x\n", key);
+        chip->registers[reg] = key;
+        return;
     }
+    chip->pc -= 2;
 }
 
 /** Opcode 2NNN - call */
@@ -194,7 +198,7 @@ void add_to_index_inst(chip_state* chip, short reg){
  */
 void index_font_inst(chip_state* chip, short reg){
     debugf("Setting ir for char %x", chip->registers[reg]);
-    chip->ir = chip->memory[80 + chip->registers[reg] * 5];
+    chip->ir = 80 + chip->registers[reg] * 5;
 }
 
 /**
@@ -265,38 +269,20 @@ void log_arith_inst(chip_state* chip, unsigned short xind, unsigned short yind, 
             chip->registers[xind] = xval + yval;
             break;
         case 5:
-            if (xval >= yval){
-                chip->registers[0xF] = 1;
-            } else {
-                chip->registers[0xF] = 0;
-            }
             chip->registers[xind] = xval - yval;
+            chip->registers[0xF] = xval > yval;
             break;
         case 7:
-            if (yval >= xval){
-                chip->registers[0xF] = 1;
-            } else {
-                chip->registers[0xF] = 0;
-            }
             chip->registers[xind] = yval - xval;
+            chip->registers[0xF] = yval > xval;
             break;
         case 6:
-            if (yval & 0x1){
-                chip->registers[0xF] = 1;
-            } else {
-                chip->registers[0xF] = 0;
-            }
-            chip->registers[xind] = yval;
-            chip->registers[xind] >>= 1;
+            chip->registers[xind] = xval >> 1;
+            chip->registers[0xF] = xval & 0x1;
             break;
         case 0xE:
-            if ((yval & 0x8000) != 0){
-                chip->registers[0xF] = 1;
-            } else {
-                chip->registers[0xF] = 0;
-            }
-            chip->registers[xind] = yval;
-            chip->registers[xind] <<= 1;
+            chip->registers[xind] = xval << 1;
+            chip->registers[0xF] = (xval & 0x80) != 0;
             break;
     }
 }
@@ -312,7 +298,7 @@ void random_inst(chip_state* chip, unsigned char ind, unsigned short val){
  */
 void display_inst(chip_state* chip, short x_ind, short y_ind, unsigned short n){
     short x_coord = chip->registers[x_ind] & 63;
-    short y_coord = chip->registers[y_ind] & 63;
+    short y_coord = chip->registers[y_ind] & 31;
     debugf("Calling display on coords %d, %d with %d rows\n", x_coord, y_coord, n);
     debugf("IR is: %x\n", chip->ir);
     debugf("Memory at 0x200: %x %x\n", chip->memory[0x200], chip->memory[0x201]);

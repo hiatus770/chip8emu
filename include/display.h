@@ -12,7 +12,7 @@ typedef struct display{
 } display;
 
 display* init_display(){
-    return (display*)malloc(sizeof(display));
+    return (display*)calloc(1, sizeof(display));
 }
 
 void paint(display* d, int x, int y, int on){
@@ -25,7 +25,7 @@ void paint(display* d, int x, int y, int on){
         int intermediate = 1 << y;
         d->pixels[x] |= intermediate;
     } else {
-        int intermediate = (1 << y) ^ 0xFFFFFFF;
+        int intermediate = ~(1 << y);
         d->pixels[x] &= intermediate;
     }
 }
