@@ -15,7 +15,8 @@ int main(void)
 
     // load_from_path("roms/Particle Demo [zeroZshadow, 2008].ch8", chip->memory);
     // load_from_path("roms/3dviprmaze-schip.ch8", chip->memory);
-    load_from_path("roms/slipperyslope.ch8", chip->memory);
+    // load_from_path("roms/slipperyslope.ch8", chip->memory);
+    load_from_path("roms/chipquarium.ch8", chip->memory);
     // load_from_path("roms/6-keypad.ch8", chip->memory);
 
     InitWindow(screenWidth, screenHeight, "chip8emu");
@@ -35,7 +36,7 @@ int main(void)
         }
 
         get_keypad(chip->keypad);
-        for(int i = 0; i < 80; i++){
+        for(int i = 0; i < 8; i++){
             cycle(chip);
             render_raylib(chip->disp);
         }

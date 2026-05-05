@@ -48,11 +48,11 @@ void render_raylib(display* d){
             if (((d->pixels[i] >> bit) & 1) == 1){
                 int posX = i * blockSize;
                 int posY = bit * blockSize;
-                DrawRectangle(posX, posY, blockSize, blockSize, BLACK);
+                DrawRectangle(posX, posY, blockSize, blockSize, WHITE);
             } else {
                 int posX = i * blockSize;
                 int posY = bit * blockSize;
-                DrawRectangle(posX, posY, blockSize, blockSize, WHITE);
+                DrawRectangle(posX, posY, blockSize, blockSize, BLUE);
             }
         }
     }
