@@ -4,6 +4,7 @@
 #include "raylib.h"
 #include "stack.h"
 #include "mem.h"
+#include <stdalign.h>
 
 typedef struct chip_state {
     display* disp;
@@ -18,6 +19,9 @@ typedef struct chip_state {
     unsigned char memory[4096]; // memory is 4096 bytes
     //    3 2 1 0
     //    0 0 0 0
+
+
+    char keypad[16]; // Keypad init
 
 } chip_state;
 
@@ -37,15 +41,36 @@ chip_state* init_chip_empty(){
         chip->registers[i] = 0;
     }
 
-    chip->s = init_stack();
-
     for (int i = 0; i < 4096; i++){
         chip->memory[i] = 0;
     }
 
+    for (int i = 0; i < 16; i++){
+        chip->keypad[i] = 0;
+    }
+
+    chip->s = init_stack();
+
     return chip;
 }
 
+/** Timer related opcodes */
+void set_timer_inst(chip_state* chip, short reg){
+    chip->registers[reg] = chip->delayTimer;
+}
+void delay_set_inst(chip_state* chip, short reg){
+    chip->delayTimer = chip->registers[reg];
+}
+void sound_set_inst(chip_state* chip, short reg){
+    chip->soundTimer = chip->registers[reg];
+}
+
+void dec_conv_inst(chip_state* chip, short reg){
+    chip->memory[chip->ir] = chip->registers[reg]/100;
+    chip->memory[chip->ir+1] = (chip->registers[reg] % 100)/10;
+    chip->memory[chip->ir+2] = chip->registers[reg] % 10;
+    debugf("Converting %d to %d %d %d\n", chip->registers[reg], chip->memory[chip->ir], chip->memory[chip->ir+1], chip->memory[chip->ir+2]);
+}
 
 /** Opcode 1nnn */
 void jump_inst(chip_state* chip, unsigned int addr){
@@ -62,6 +87,26 @@ void jump_offset_inst(chip_state* chip, unsigned short n2, unsigned short n1, un
         chip->pc = chip->registers[n2] + ((n2 << 8) + (n1 << 4) + n0);
     } else {
         chip->pc = chip->registers[0]  + ((n2 << 8) + (n1 << 4) + n0);
+    }
+}
+
+/**
+ * Input handling instructions
+ */
+void skip_press_inst(chip_state* chip, short reg){
+    if (chip->keypad[chip->registers[reg]] == 1){
+        chip->pc += 2;
+    }
+}
+void skip_not_press_inst(chip_state* chip, short reg){
+    if (chip->keypad[chip->registers[reg]] == 0){
+        chip->pc += 2;
+    }
+}
+void get_key_inst(chip_state* chip, short reg){
+    debugf("Waiting on keypress %x\n" , chip->registers[reg]);
+    if (chip->keypad[chip->registers[reg]] == 0){
+        chip->pc -= 2; // keep it at the same spot
     }
 }
 
@@ -102,6 +147,28 @@ void set_register_inst(chip_state* chip, int reg_index, unsigned short value){
 }
 
 /**
+ * Load store instructions
+ */
+void store_reg_inst(chip_state* chip, short x){
+    for (int i = 0; i <= x; i++){
+        chip->memory[i + chip->ir] = chip->registers[i];
+    }
+
+    if (oldStoreLoad){
+        chip->ir = chip->ir + x + 1;
+    }
+}
+void load_reg_inst(chip_state* chip, short x){
+    for (int i = 0; i <= x; i++){
+        chip->registers[i] = chip->memory[i + chip->ir];
+    }
+
+    if (oldStoreLoad){
+        chip->ir = chip->ir + x + 1;
+    }
+}
+
+/**
  * add_register_inst 7XNN
  */
 void add_register_inst(chip_state* chip, int reg_index, unsigned short value){
@@ -115,6 +182,19 @@ void add_register_inst(chip_state* chip, int reg_index, unsigned short value){
 void set_index_inst(chip_state* chip, unsigned int value){
     debugf("Setting ir to %x\n", value);
     chip->ir = value;
+}
+/**
+ *  Add to index
+ */
+void add_to_index_inst(chip_state* chip, short reg){
+    chip->ir += chip->registers[reg];
+}
+/**
+ * Index font instructions, points to the part in memory with the font data
+ */
+void index_font_inst(chip_state* chip, short reg){
+    debugf("Setting ir for char %x", chip->registers[reg]);
+    chip->ir = chip->memory[80 + chip->registers[reg] * 5];
 }
 
 /**
@@ -343,6 +423,64 @@ void cycle(chip_state* chip){
             log_arith_inst(chip, n2, n1, n0);
             break;
 
+        // Input
+        case 0xE:
+            // Both input skipping instructions
+            switch(n10){
+                case 0x9E:
+                    skip_press_inst(chip, n2);
+                    break;
+                case 0xA1:
+                    skip_not_press_inst(chip, n2);
+                    break;
+            }
+            break;
+
+        // F opcodes
+        case 0xF:
+            switch(n10){
+                // Timer related opcodes
+                case 0x07:
+                    set_timer_inst(chip, n2);
+                    break;
+                case 0x15:
+                    delay_set_inst(chip, n2);
+                    break;
+                case 0x18:
+                    sound_set_inst(chip, n2);
+                    break;
+
+                // Add to index
+                case 0x1E:
+                    add_to_index_inst(chip, n2);
+                    break;
+
+                // Get key
+                case 0x0A:
+                    get_key_inst(chip, n2); // waits for instructions
+                    break;
+
+                // Get font
+                case 0x29:
+                    index_font_inst(chip, n2);
+                    break;
+
+                // Binary coded decimal conversion
+                case 0x33:
+                    dec_conv_inst(chip, n2);
+                    break;
+
+                // Store and load memory
+                case 0x55:
+                    store_reg_inst(chip, n2);
+                    break;
+
+                case 0x65:
+                    load_reg_inst(chip, n2);
+                    break;
+
+            }
+            break;
 
         // Miscellaneous
         case 0xD:

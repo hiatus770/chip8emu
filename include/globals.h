@@ -6,8 +6,10 @@ const int screenHeight = 512;
 
 // Configuration for the behaviour of the hardware
 #define jumpOffsetNew 0
+#define oldStoreLoad 0 
 #define debug 1
 
+// debugging helper
 #if debug
 #define debugf(...) printf(__VA_ARGS__)
 #else

@@ -5,6 +5,7 @@
 
 #include "../include/stack.h"
 #include "../include/chip.h"
+#include "../include/input.h"
 
 int main(void)
 {
@@ -20,11 +21,16 @@ int main(void)
     while (!WindowShouldClose())    // Detect window close button or ESC key
     {
         BeginDrawing();
-            for(int i = 0; i < 16; i++){
-                cycle(chip);
-            }
-            render_raylib(chip->disp);
-            ClearBackground(RAYWHITE);
+
+        get_keypad(chip->keypad);
+
+        for(int i = 0; i < 16; i++){
+            cycle(chip);
+        }
+
+        render_raylib(chip->disp);
+        ClearBackground(RAYWHITE);
+
         EndDrawing();
     }
 
