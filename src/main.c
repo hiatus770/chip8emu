@@ -13,10 +13,10 @@ int main(void)
     chip->pc = 0x200;
     load_font(chip->memory);
 
-    // load_from_path("roms/Particle Demo [zeroZshadow, 2008].ch8", chip->memory);
+    load_from_path("roms/Particle Demo [zeroZshadow, 2008].ch8", chip->memory);
     // load_from_path("roms/3dviprmaze-schip.ch8", chip->memory);
     // load_from_path("roms/slipperyslope.ch8", chip->memory);
-    load_from_path("roms/chipquarium.ch8", chip->memory);
+    // load_from_path("roms/chipquarium.ch8", chip->memory);
     // load_from_path("roms/6-keypad.ch8", chip->memory);
 
     InitWindow(screenWidth, screenHeight, "chip8emu");
