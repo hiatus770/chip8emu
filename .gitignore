@@ -1,0 +1,7 @@
+# Build output
+main
+*.o
+
+# Debug / run logs
+*.log
+log.txt
